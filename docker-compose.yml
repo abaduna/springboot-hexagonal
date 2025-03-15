@@ -1,15 +1,16 @@
-version: '3.5'
-
 services:
   postgres:
     container_name: postgres
     image: postgres:11
     environment:
-      POSTGRES_USER: 123
-      POSTGRES_PASSWORD: 123
+      POSTGRES_USER: appuser # <-- Usuario alfanumérico
+      POSTGRES_PASSWORD: 123 # Contraseña válida
       POSTGRES_DB: defaultdb
       PGDATA: /data/postgres
     ports:
       - "5432:5432"
     restart: unless-stopped
+networks:
+  default:
+    name: hexagonal_network
 

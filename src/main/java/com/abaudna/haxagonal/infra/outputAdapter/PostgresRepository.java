@@ -11,6 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,30 +24,33 @@ public class PostgresRepository implements EntityRepository {
     @Override
     public <T> T save(T reg) {
         Field[] entityFields = reg.getClass().getDeclaredFields();
-        String[] fields = new String[entityFields.length];
-        Object[] fieldValues = new Object[entityFields.length];
+        List<String> fields = new ArrayList<>();
+        List<Object> fieldValues = new ArrayList<>();
 
         try {
-            for (int i = 0; i < entityFields.length; i++) {
-                fields[i] = entityFields[i].getName();
-                String getterName = "get" + fields[i].substring(0, 1).toUpperCase() + fields[i].substring(1);
+            for (Field field : entityFields) {
+                // Excluir el campo ID si es autoincremental
+                if (field.getName().equalsIgnoreCase("id")) continue;
+
+                String getterName = "get" + field.getName().substring(0, 1).toUpperCase() + field.getName().substring(1);
                 Method getter = reg.getClass().getMethod(getterName);
-                fieldValues[i] = getter.invoke(reg);
+                Object value = getter.invoke(reg);
+
+                fields.add(field.getName());
+                fieldValues.add(value);
             }
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-                 | NoSuchMethodException | SecurityException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to access entity fields", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al acceder a los campos", e);
         }
 
-        StringBuilder sql = new StringBuilder();
-        sql.append("INSERT INTO ")
-                .append(reg.getClass().getSimpleName())
-                .append("(").append(String.join(",", fields)).append(")")
-                .append(" VALUES ")
-                .append("(").append(String.join(",", Collections.nCopies(fields.length, "?"))).append(")");
+        String sql = String.format(
+                "INSERT INTO %s (%s) VALUES (%s)",
+                reg.getClass().getSimpleName(),
+                String.join(",", fields),
+                String.join(",", Collections.nCopies(fields.size(), "?"))
+        );
 
-        jdbcTemplate.update(sql.toString(), fieldValues);
+        jdbcTemplate.update(sql, fieldValues.toArray());
         return reg;
     }
 

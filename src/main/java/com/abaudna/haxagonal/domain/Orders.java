@@ -9,6 +9,6 @@ import lombok.Setter;
 @Setter
 public class Orders {
     private String id;
-    private String coustomerId;
+    private Long coustomerId;
     private String total;
 }

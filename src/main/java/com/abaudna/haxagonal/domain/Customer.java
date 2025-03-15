@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Customer {
-    private String Id;
+    private Long Id;
     private String name;
     private String country;
 }
